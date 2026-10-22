@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "JS.info Tracker Sync",
+  "version": "1.0.0",
+  "description": "Automatically marks javascript.info lessons in your tracker: in progress when you open one, done when you click Next lesson.",
+  "permissions": ["storage"],
+  "optional_host_permissions": ["https://*/*", "http://*/*"],
+  "background": { "service_worker": "background.js" },
+  "content_scripts": [
+    {
+      "matches": ["https://javascript.info/*"],
+      "js": ["lessons.js", "content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": { "default_popup": "popup.html", "default_title": "JS.info Tracker" }
+}

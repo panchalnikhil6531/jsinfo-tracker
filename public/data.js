@@ -222,7 +222,7 @@ const CURRICULUM = [
         ["Custom elements", "custom-elements"],
         ["Shadow DOM", "shadow-dom"],
         ["Template element", "template-element"],
-        ["Shadow DOM slots, composition", "shadow-dom-slots-composition"],
+        ["Shadow DOM slots, composition", "slots-composition"],
         ["Shadow DOM CSS", "shadow-dom-style"],
         ["Shadow DOM and events", "shadow-dom-events"],
       ]},
