@@ -22,13 +22,13 @@ function showError(msg) {
 }
 const statusOf = (slug) => progress[slug]?.status || "todo";
 
-function setStatus(slug, status) {
+function setStatus(slug, status, redraw = true) {
   const prev = progress[slug] || {};
   if (status === "todo" && !prev.note) delete progress[slug];
   else progress[slug] = { ...prev, status, at: new Date().toISOString() };
   if (status === "todo" && progress[slug]) delete progress[slug].status;
   sync(slug, { status });
-  render();
+  if (redraw) render();
 }
 
 function setNote(slug, note) {
@@ -60,12 +60,59 @@ function streak() {
 }
 const localDay = (d) => `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
 
+function doneDates() {
+  return Object.values(progress).filter((p) => p.status === "done" && p.at).map((p) => new Date(p.at));
+}
+const dayNum = (d) => Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 864e5;
+function bestStreak() {
+  const days = [...new Set(doneDates().map(dayNum))].sort((x, y) => x - y);
+  let best = 0, run = 0;
+  days.forEach((d, i) => { run = i && d === days[i - 1] + 1 ? run + 1 : 1; best = Math.max(best, run); });
+  return best;
+}
+
+function renderStats(total, done) {
+  const dates = doneDates();
+  const now = Date.now();
+  const inRange = (days) => dates.filter((d) => now - d < days * 864e5).length;
+  const learning = total.filter(([, s]) => statusOf(s) === "learning").length;
+  const remaining = total.length - done;
+  const perDay = inRange(14) / 14;
+  const eta = remaining && perDay ? Math.ceil(remaining / perDay) : null;
+  const cards = [
+    ["Completed", done], ["In progress", learning], ["This week", inRange(7)],
+    ["Streak", streak() + "d"], ["Best streak", bestStreak() + "d"],
+    ["Finish in", remaining === 0 ? "Done 🎉" : eta ? `~${eta}d` : "—"],
+  ];
+  const grid = $("statsGrid");
+  grid.textContent = "";
+  cards.forEach(([label, val]) => grid.append(el("div", "statcard", [el("b", "", String(val)), el("span", "", label)])));
+  grid.lastChild.title = "Estimate at your pace over the last 14 days";
+
+  // Heatmap: 15 weeks x 7 days, columns are weeks (Sun-Sat), newest on the right.
+  const counts = {};
+  dates.forEach((d) => { const k = localDay(d); counts[k] = (counts[k] || 0) + 1; });
+  const hm = $("heatmap");
+  hm.textContent = "";
+  const today = new Date();
+  for (let i = 0; i < 15 * 7; i++) {
+    const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() - today.getDay() - 14 * 7 + i);
+    const cell = el("i", "cell");
+    if (d > today) cell.style.visibility = "hidden";
+    const n = counts[localDay(d)] || 0;
+    cell.dataset.l = n === 0 ? 0 : n < 2 ? 1 : n < 4 ? 2 : n < 7 ? 3 : 4;
+    cell.title = `${d.toLocaleDateString()}: ${n} lesson${n === 1 ? "" : "s"}`;
+    hm.append(cell);
+  }
+}
+
 // ---------- render ----------
 function render() {
   const q = $("search").value.trim().toLowerCase();
   const filter = $("filter").value;
   const matches = ([title, slug]) =>
-    (!q || title.toLowerCase().includes(q)) && (filter === "all" || statusOf(slug) === filter);
+    (!q || title.toLowerCase().includes(q)) &&
+    (filter === "all" || (filter === "notes" ? !!progress[slug]?.note : statusOf(slug) === filter));
 
   const total = allLessons();
   const done = countDone(total);
@@ -76,13 +123,18 @@ function render() {
   $("streakText").textContent = s ? `🔥 ${s}-day streak` : "";
 
   renderContinue(total);
+  renderStats(total, done);
 
   content.textContent = "";
   let shown = 0;
   CURRICULUM.forEach((part, pi) => {
     const partEl = el("section", "part");
     const partLessons = part.chapters.flatMap((c) => c.lessons);
-    partEl.append(el("h2", "", [part.part, el("small", "", `${countDone(partLessons)}/${partLessons.length}`)]));
+    const pd = countDone(partLessons);
+    partEl.append(el("h2", "", [part.part, el("small", "", `${pd}/${partLessons.length}`)]));
+    const pbar = el("div", "bar thin", [el("div")]);
+    pbar.firstChild.style.width = (pd / partLessons.length) * 100 + "%";
+    partEl.append(pbar);
 
     part.chapters.forEach((ch, ci) => {
       const visible = ch.lessons.filter(matches);
@@ -116,7 +168,17 @@ function chapterEl(key, ch, visible, forceOpen) {
   const done = countDone(ch.lessons);
   const mini = el("div", "mini", [Object.assign(el("div"), {})]);
   mini.firstChild.style.width = (done / ch.lessons.length) * 100 + "%";
-  d.append(el("summary", "", [el("span", "ch-title", ch.title), mini, el("span", "ch-count", `${done}/${ch.lessons.length}`)]));
+  const allDone = done === ch.lessons.length;
+  const markAll = el("button", "mark-all", allDone ? "Undo all" : "Mark all done");
+  markAll.type = "button";
+  markAll.addEventListener("click", (e) => {
+    e.preventDefault(); // don't toggle the <details>
+    const target = allDone ? "todo" : "done";
+    if (!confirm(`${allDone ? "Clear" : "Complete"} all ${ch.lessons.length} lessons in "${ch.title}"?`)) return;
+    ch.lessons.forEach(([, slug]) => { if (statusOf(slug) !== target) setStatus(slug, target, false); });
+    render();
+  });
+  d.append(el("summary", "", [el("span", "ch-title", ch.title), mini, el("span", "ch-count", `${done}/${ch.lessons.length}`), markAll]));
 
   const ul = el("ul", "lessons");
   visible.forEach(([title, slug]) => ul.append(...lessonEl(title, slug)));
@@ -179,6 +241,35 @@ $("exportBtn").addEventListener("click", () => {
   a.click();
   URL.revokeObjectURL(a.href);
 });
+$("importBtn").addEventListener("click", () => $("importFile").click());
+$("importFile").addEventListener("change", async (e) => {
+  const file = e.target.files[0];
+  e.target.value = "";
+  if (!file) return;
+  try {
+    const data = JSON.parse(await file.text());
+    const known = new Set(allLessons().map(([, s]) => s));
+    const entries = Object.entries(data).filter(([slug, p]) => known.has(slug) && p && typeof p === "object");
+    if (!entries.length) throw new Error("no matching lessons in file");
+    if (!confirm(`Import ${entries.length} lessons? This overwrites matching lessons.`)) return;
+    for (const [slug, p] of entries) {
+      const body = {};
+      if (["learning", "done"].includes(p.status)) body.status = p.status;
+      if (typeof p.note === "string") body.note = p.note;
+      if (Object.keys(body).length) await api("/progress/" + slug, { method: "PUT", body });
+    }
+    progress = await api("/progress");
+    showError("");
+    render();
+  } catch (err) { showError("Import failed: " + err.message); }
+});
+
+document.addEventListener("keydown", (e) => {
+  const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName);
+  if (e.key === "/" && !typing) { e.preventDefault(); $("search").focus(); }
+  else if (e.key === "Escape" && document.activeElement === $("search")) { $("search").value = ""; $("search").blur(); render(); }
+});
+
 $("resetBtn").addEventListener("click", async () => {
   if (!confirm("Erase all your progress and notes? This can't be undone.")) return;
   try {
@@ -203,6 +294,13 @@ $("deleteBtn").addEventListener("click", async () => {
 $("themeBtn").addEventListener("click", () => window.toggleTheme());
 
 api("/progress")
-  .then((data) => { progress = data; })
+  .then((data) => {
+    progress = data;
+    // Start with the chapter holding the next lesson expanded.
+    const next = allLessons().find(([, s]) => statusOf(s) !== "done");
+    CURRICULUM.forEach((p, pi) => p.chapters.forEach((c, ci) => {
+      if (next && c.lessons.some(([, s]) => s === next[1])) openChapters.add(`${pi}-${ci}`);
+    }));
+  })
   .catch((e) => showError("Couldn't load your progress: " + e.message))
   .finally(render);

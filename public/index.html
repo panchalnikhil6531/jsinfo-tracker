@@ -20,13 +20,20 @@
         </div>
       </div>
 
+      <div id="statsGrid" class="statsgrid"></div>
+      <details class="activity" open>
+        <summary>Activity (last 15 weeks)</summary>
+        <div id="heatmap" class="heatmap" aria-label="Lessons completed per day"></div>
+      </details>
+
       <div class="controls">
-        <input id="search" type="search" placeholder="Search lessons…">
+        <input id="search" type="search" placeholder="Search lessons…  (press / )">
         <select id="filter">
           <option value="all">All</option>
           <option value="todo">Not started</option>
           <option value="learning">In progress</option>
           <option value="done">Completed</option>
+          <option value="notes">With notes</option>
         </select>
         <button id="expandAll" type="button">Expand all</button>
         <button id="collapseAll" type="button">Collapse all</button>
@@ -43,6 +50,8 @@
     <details class="data">
       <summary>Backup &amp; account</summary>
       <button id="exportBtn" type="button">Export JSON</button>
+      <button id="importBtn" type="button">Import JSON</button>
+      <input id="importFile" type="file" accept="application/json,.json" hidden>
       <button id="resetBtn" type="button" class="danger">Reset my progress</button>
       <button id="deleteBtn" type="button" class="danger">Delete my account</button>
     </details>
