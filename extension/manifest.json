@@ -1,9 +1,10 @@
 {
   "manifest_version": 3,
   "name": "JS.info Tracker Sync",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Automatically marks javascript.info lessons in your tracker: in progress when you open one, done when you click Next lesson.",
-  "permissions": ["storage"],
+  "icons": { "16": "icons/icon16.png", "32": "icons/icon32.png", "48": "icons/icon48.png", "128": "icons/icon128.png" },
+  "permissions": ["storage", "activeTab"],
   "optional_host_permissions": ["https://*/*", "http://*/*"],
   "background": { "service_worker": "background.js" },
   "content_scripts": [
@@ -13,5 +14,9 @@
       "run_at": "document_idle"
     }
   ],
-  "action": { "default_popup": "popup.html", "default_title": "JS.info Tracker" }
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "JS.info Tracker",
+    "default_icon": { "16": "icons/icon16.png", "32": "icons/icon32.png", "48": "icons/icon48.png" }
+  }
 }

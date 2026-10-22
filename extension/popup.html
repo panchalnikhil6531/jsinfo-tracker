@@ -1,37 +1,67 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
-  <style>
-    body { width: 300px; margin: 0; padding: 14px; font: 14px system-ui, sans-serif; color: #1d2330; }
-    h1 { font-size: 15px; margin: 0 0 10px; }
-    label { display: block; font-size: 12px; color: #6b7385; margin-top: 8px; }
-    input { width: 100%; box-sizing: border-box; padding: 6px 8px; margin-top: 2px; border: 1px solid #ccd; border-radius: 6px; font: inherit; }
-    button { margin-top: 12px; width: 100%; padding: 8px; border: 0; border-radius: 6px; background: #f0b90b; font-weight: 600; cursor: pointer; }
-    button.secondary { background: #e8eaf0; margin-top: 8px; }
-    .msg { margin-top: 8px; font-size: 12px; min-height: 16px; }
-    .err { color: #c0392b; }
-    [hidden] { display: none; }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="popup.css">
 </head>
 <body>
-  <h1>JS.info Tracker Sync</h1>
+  <header class="head">
+    <img src="icons/icon48.png" alt="" width="36" height="36">
+    <div>
+      <div class="title">JS.info Tracker</div>
+      <div class="subtitle" id="status">Not connected</div>
+    </div>
+    <span class="dot" id="dot" title="Connection status"></span>
+  </header>
 
-  <form id="loginView">
-    <label>Tracker URL <input id="url" placeholder="https://your-app.onrender.com" required></label>
-    <label>Email <input id="email" type="email" required></label>
-    <label>Password <input id="password" type="password" required></label>
-    <button type="submit">Log in</button>
+  <!-- Logged out -->
+  <form id="loginView" class="card" novalidate>
+    <label>Tracker URL
+      <input id="url" type="url" placeholder="https://your-app.onrender.com" autocomplete="url" required>
+    </label>
+    <label>Email
+      <input id="email" type="email" autocomplete="username" required>
+    </label>
+    <label>Password
+      <span class="pw">
+        <input id="password" type="password" autocomplete="current-password" required>
+        <button type="button" id="togglePw" class="ghost" aria-label="Show password">Show</button>
+      </span>
+    </label>
+    <button type="submit" id="loginBtn" class="primary">Log in</button>
   </form>
 
+  <!-- Logged in -->
   <div id="mainView" hidden>
-    <p>Logged in as <b id="who"></b></p>
-    <p class="msg" id="last"></p>
-    <button id="open" class="secondary">Open my tracker</button>
-    <button id="logout" class="secondary">Log out</button>
+    <section class="card">
+      <div class="row">
+        <span class="who">Hi, <b id="who"></b></span>
+        <span class="pct" id="pct">0%</span>
+      </div>
+      <div class="bar"><div id="bar"></div></div>
+      <div class="counts"><span id="doneCount">–</span><span id="learnCount"></span></div>
+    </section>
+
+    <section class="card now" id="nowCard" hidden>
+      <div class="label">On this page</div>
+      <div id="nowText"></div>
+    </section>
+
+    <section class="card last">
+      <div class="label">Last sync</div>
+      <div id="last">Open a javascript.info lesson to start tracking.</div>
+    </section>
+
+    <div class="actions">
+      <button id="open" class="primary">Open tracker</button>
+      <button id="logout" class="secondary">Log out</button>
+    </div>
   </div>
 
-  <p class="msg err" id="msg"></p>
+  <p class="msg" id="msg" role="alert"></p>
+
+  <script src="lessons.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>
