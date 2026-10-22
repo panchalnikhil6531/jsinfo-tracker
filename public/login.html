@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Log in — JavaScript.info Tracker</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="authpage">
+  <main class="authbox">
+    <h1>JavaScript.info Tracker</h1>
+    <p class="sub">Track your progress and see how everyone else is doing.</p>
+
+    <div class="tabs">
+      <button type="button" id="tabLogin" class="active">Log in</button>
+      <button type="button" id="tabRegister">Register</button>
+    </div>
+
+    <form id="form" novalidate>
+      <label id="nameRow" hidden>Name <input id="name" autocomplete="name" maxlength="40"></label>
+      <label>Email <input id="email" type="email" autocomplete="email" required></label>
+      <label>Password <input id="password" type="password" autocomplete="current-password" minlength="6" required></label>
+      <p id="error" class="error" role="alert"></p>
+      <button type="submit" id="submit" class="primary">Log in</button>
+    </form>
+  </main>
+
+  <script src="api.js"></script>
+  <script>
+    if (Auth.token) location.replace("index.html");
+
+    let mode = "login";
+    const $ = (id) => document.getElementById(id);
+
+    function setMode(m) {
+      mode = m;
+      $("tabLogin").classList.toggle("active", m === "login");
+      $("tabRegister").classList.toggle("active", m === "register");
+      $("nameRow").hidden = m === "login";
+      $("password").autocomplete = m === "login" ? "current-password" : "new-password";
+      $("submit").textContent = m === "login" ? "Log in" : "Create account";
+      $("error").textContent = "";
+    }
+    $("tabLogin").onclick = () => setMode("login");
+    $("tabRegister").onclick = () => setMode("register");
+
+    $("form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      $("error").textContent = "";
+      $("submit").disabled = true;
+      try {
+        const body = { email: $("email").value, password: $("password").value };
+        if (mode === "register") body.name = $("name").value;
+        const { token, user } = await api("/auth/" + mode, { method: "POST", body });
+        Auth.set(token, user);
+        location.href = "index.html";
+      } catch (err) {
+        $("error").textContent = err.message;
+      } finally {
+        $("submit").disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

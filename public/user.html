@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>User progress — JavaScript.info Tracker</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <div class="topbar"><h1>JavaScript.info Tracker</h1><nav id="nav"></nav></div>
+      <p class="sub"><a href="community.html">← Community</a></p>
+      <h2 id="uname"></h2>
+      <div class="bar"><div id="bar"></div></div>
+      <div class="stats"><span id="summary"></span></div>
+    </div>
+  </header>
+
+  <main class="wrap"><div id="content"></div></main>
+
+  <script src="data.js"></script>
+  <script src="api.js"></script>
+  <script>
+    if (requireLogin()) {
+      renderNav("community");
+      const id = new URLSearchParams(location.search).get("id");
+      const content = document.getElementById("content");
+      const mk = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; };
+
+      api("/users/" + encodeURIComponent(id) + "/progress").then(({ user, progress }) => {
+        document.title = user.name + " — JavaScript.info Tracker";
+        document.getElementById("uname").textContent = user.name;
+        const status = (slug) => progress[slug]?.status || "todo";
+        const all = CURRICULUM.flatMap((p) => p.chapters.flatMap((c) => c.lessons));
+        const done = all.filter(([, s]) => status(s) === "done").length;
+        const pct = Math.round((done / all.length) * 100);
+        document.getElementById("bar").style.width = pct + "%";
+        document.getElementById("summary").textContent = `${done} / ${all.length} lessons completed (${pct}%)`;
+
+        CURRICULUM.forEach((part) => {
+          const sec = mk("section", "part");
+          sec.append(mk("h2", "", part.part));
+          part.chapters.forEach((ch) => {
+            const d = mk("details", "chapter");
+            const n = ch.lessons.filter(([, s]) => status(s) === "done").length;
+            const sum = mk("summary");
+            sum.append(mk("span", "ch-title", ch.title), mk("span", "ch-count", `${n}/${ch.lessons.length}`));
+            const ul = mk("ul", "lessons");
+            ch.lessons.forEach(([title, slug]) => {
+              const st = status(slug);
+              const li = mk("li", "lesson " + st);
+              const icon = mk("span", "stat", st === "done" ? "✅" : st === "learning" ? "🟠" : "⚪");
+              const a = mk("a", "", title);
+              a.href = BASE_URL + slug; a.target = "_blank"; a.rel = "noopener";
+              li.append(icon, a);
+              ul.append(li);
+            });
+            d.append(sum, ul);
+            sec.append(d);
+          });
+          content.append(sec);
+        });
+      }).catch((e) => { content.append(mk("p", "empty", e.message)); });
+    }
+  </script>
+</body>
+</html>

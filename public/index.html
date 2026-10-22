@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>JavaScript.info Progress Tracker</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <div class="topbar"><h1>JavaScript.info Tracker</h1><nav id="nav"></nav></div>
+      <p class="sub">Track your progress through the <a href="https://javascript.info" target="_blank" rel="noopener">javascript.info</a> tutorial.</p>
+
+      <div class="overall">
+        <div class="bar"><div id="overallBar"></div></div>
+        <div class="stats">
+          <span id="overallText"></span>
+          <span id="streakText"></span>
+        </div>
+      </div>
+
+      <div class="controls">
+        <input id="search" type="search" placeholder="Search lessons…">
+        <select id="filter">
+          <option value="all">All</option>
+          <option value="todo">Not started</option>
+          <option value="learning">In progress</option>
+          <option value="done">Completed</option>
+        </select>
+        <button id="expandAll" type="button">Expand all</button>
+        <button id="collapseAll" type="button">Collapse all</button>
+        <button id="themeBtn" type="button" title="Toggle theme">🌓</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <p id="errorBox" class="error" role="alert" hidden></p>
+    <section id="continueBox" class="continue" hidden></section>
+    <div id="content"></div>
+
+    <details class="data">
+      <summary>Backup &amp; account</summary>
+      <button id="exportBtn" type="button">Export JSON</button>
+      <button id="resetBtn" type="button" class="danger">Reset my progress</button>
+      <button id="deleteBtn" type="button" class="danger">Delete my account</button>
+    </details>
+  </main>
+
+  <script src="data.js"></script>
+  <script src="api.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

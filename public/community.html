@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Community — JavaScript.info Tracker</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <div class="topbar"><h1>JavaScript.info Tracker</h1><nav id="nav"></nav></div>
+      <p class="sub">Everyone's progress, ranked by completed lessons. Click a name to see their lessons.</p>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div id="board"></div>
+  </main>
+
+  <script src="data.js"></script>
+  <script src="api.js"></script>
+  <script>
+    if (requireLogin()) {
+      renderNav("community");
+      const total = CURRICULUM.flatMap((p) => p.chapters.flatMap((c) => c.lessons)).length;
+      const board = document.getElementById("board");
+
+      const ago = (iso) => {
+        if (!iso) return "no activity yet";
+        const days = Math.floor((Date.now() - new Date(iso)) / 864e5);
+        return days <= 0 ? "active today" : days === 1 ? "active yesterday" : `active ${days} days ago`;
+      };
+
+      api("/users").then((users) => {
+        board.textContent = "";
+        users.forEach((u, i) => {
+          const pct = Math.round((u.done / total) * 100);
+          const a = document.createElement("a");
+          a.className = "userrow" + (u.isMe ? " me" : "");
+          a.href = "user.html?id=" + encodeURIComponent(u.id);
+          a.innerHTML = `<span class="rank"></span><div class="uinfo"><div class="uname"></div>
+            <div class="bar"><div></div></div><div class="umeta"></div></div><div class="upct"></div>`;
+          a.querySelector(".rank").textContent = i + 1;
+          a.querySelector(".uname").textContent = u.name + (u.isMe ? " (you)" : "");
+          a.querySelector(".bar > div").style.width = pct + "%";
+          a.querySelector(".umeta").textContent = `${u.done}/${total} done · ${u.learning} in progress · ${ago(u.lastActive)}`;
+          a.querySelector(".upct").textContent = pct + "%";
+          board.append(a);
+        });
+        if (!users.length) board.innerHTML = '<p class="empty">No users yet.</p>';
+      }).catch((e) => { board.innerHTML = '<p class="empty"></p>'; board.firstChild.textContent = e.message; });
+    }
+  </script>
+</body>
+</html>
